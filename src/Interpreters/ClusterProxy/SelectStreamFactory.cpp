@@ -130,7 +130,7 @@ void SelectStreamFactory::createForShard(
     Pipes & res)
 {
     bool force_add_agg_info = processed_stage == QueryProcessingStage::WithMergeableState;
-    bool add_totals_port = processed_stage == QueryProcessingStage::Complete;
+    bool add_totals_and_extremes_port = processed_stage == QueryProcessingStage::Complete;
 
     auto modified_query_ast = query_ast->clone();
     if (has_virtual_shard_num_column)
@@ -153,8 +153,11 @@ void SelectStreamFactory::createForShard(
 
         auto source = std::make_shared<SourceFromInputStream>(std::move(stream), force_add_agg_info);
 
-        if (add_totals_port)
+        if (add_totals_and_extremes_port)
+        {
             source->addTotalsPort();
+            source->addExtremesPort();
+        }
 
         res.emplace_back(std::move(source));
     };
@@ -303,8 +306,11 @@ void SelectStreamFactory::createForShard(
         auto lazy_stream = std::make_shared<LazyBlockInputStream>("LazyShardWithLocalReplica", header, lazily_create_stream);
         auto source = std::make_shared<SourceFromInputStream>(std::move(lazy_stream), force_add_agg_info);
 
-        if (add_totals_port)
+        if (add_totals_and_extremes_port)
+        {
             source->addTotalsPort();
+            source->addExtremesPort();
+        }
 
         res.emplace_back(std::move(source));
     }
