@@ -415,29 +415,31 @@ void QueryPipeline::dropTotalsIfHas()
     }
 }
 
-void QueryPipeline::addExtremesTransform(ProcessorPtr transform)
+void QueryPipeline::addExtremesTransform()
 {
     checkInitialized();
-
-    if (!typeid_cast<const ExtremesTransform *>(transform.get()))
-        throw Exception("ExtremesTransform expected for QueryPipeline::addExtremesTransform.",
-                        ErrorCodes::LOGICAL_ERROR);
 
     if (extremes_port)
         throw Exception("Extremes transform was already added to pipeline.", ErrorCodes::LOGICAL_ERROR);
 
-    if (getNumStreams() != 1)
-        throw Exception("Cant't add Extremes transform because pipeline is expected to have single stream, "
-                        "but it has " + toString(getNumStreams()) + " streams.", ErrorCodes::LOGICAL_ERROR);
+    std::vector<OutputPort *> extremes;
+    extremes.reserve(streams.size());
 
-    connect(*streams.front(), transform->getInputs().front());
+    for (auto & stream : streams)
+    {
+        auto transform = std::make_shared<ExtremesTransform>(current_header);
+        connect(*stream, transform->getInputPort());
 
-    auto & outputs = transform->getOutputs();
+        stream = &transform->getOutputPort();
+        extremes.push_back(&transform->getExtremesPort());
 
-    streams.assign({ &outputs.front() });
-    extremes_port = &outputs.back();
-    current_header = outputs.front().getHeader();
-    processors.emplace_back(std::move(transform));
+        processors.emplace_back(std::move(transform));
+    }
+
+    if (extremes.size() == 1)
+        extremes_port = extremes.front();
+    else
+        extremes_port = uniteExtremes(extremes, current_header, processors);
 }
 
 void QueryPipeline::addCreatingSetsTransform(ProcessorPtr transform)
