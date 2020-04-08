@@ -710,6 +710,9 @@ Pipe QueryPipeline::getPipe() &&
     if (totals_having_port)
         pipe.setTotalsPort(totals_having_port);
 
+    if (extremes_port)
+        pipe.setExtremesPort(extremes_port);
+
     return pipe;
 }
 
