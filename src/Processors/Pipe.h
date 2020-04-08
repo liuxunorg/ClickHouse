@@ -49,9 +49,9 @@ public:
 
     /// Totals and extremes port.
     void setTotalsPort(OutputPort * totals_) { totals = totals_; }
-    void setExtremesPort(OutputPort * totals_) { totals = totals_; }
+    void setExtremesPort(OutputPort * extremes_) { extremes = extremes_; }
     OutputPort * getTotalsPort() const { return totals; }
-    OutputPort * getExtremesPort() const { return totals; }
+    OutputPort * getExtremesPort() const { return extremes; }
 
     size_t maxParallelStreams() const { return max_parallel_streams; }
 
